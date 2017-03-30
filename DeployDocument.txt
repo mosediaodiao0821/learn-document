@@ -1,0 +1,121 @@
+zookeeper部署：
+
+
+zipkin部署：
+
+下载jar包：wget -O zipkin.jar 'https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec'
+java -jar zipkin.jar
+
+
+hystrix-dashboard部署：
+
+java -jar standalone-hystrix-dashboard-1.5.6-all.jar
+
+
+用户中心微服务部署：
+数据库升级：
+
+use dm_ucenter;
+CREATE TABLE `user_data` (
+`user_id`  int(11) NOT NULL ,
+`country`  varchar(20) NOT NULL DEFAULT 'us' ,
+PRIMARY KEY (`user_id`)
+);
+
+UCenter tag：
+
+
+
+网关部署：
+
+gateway tag：
+
+
+api部署：
+
+数据库升级：
+dm_ucenter库中的favorite表迁移到ugc库中
+
+修改配置文件：
+app/config/appconfig.properties
+添加
+	spring.application.name=app-service
+	spring.profiles.active=dev
+
+	spring.zipkin.base-url=http://localhost:9411
+	spring.sleuth.sampler.percentage=0.1
+	logging.level.com.dealmoon.app.service=DEBUG
+
+	spring.cloud.zookeeper.connect-string=127.0.0.1:2181
+	spring.cloud.zookeeper.config.enabled=true
+
+dmsdk/config/sdkconfig.properties
+添加
+	spring.cloud.zookeeper.enabled=false
+
+api tag：
+
+
+apica部署：
+
+数据库升级：
+dm_ucenter库中的favorite表迁移到ugc库中
+
+修改配置文件：
+app/config/appconfig.properties
+添加
+	spring.application.name=appca-service
+	spring.profiles.active=dev
+
+	spring.zipkin.base-url=http://localhost:9411
+	spring.sleuth.sampler.percentage=0.1
+	logging.level.com.dealmoon.app.service=DEBUG
+
+	spring.cloud.zookeeper.connect-string=127.0.0.1:2181
+	spring.cloud.zookeeper.config.enabled=true
+
+dmsdk/config/sdkconfig.properties
+添加
+	spring.cloud.zookeeper.enabled=false
+
+apica tag：
+
+
+
+
+
+用户中心代码库：git@gitlab.dealmoon.net:backend/service_user_center.git
+网关代码库：    git@gitlab.dealmoon.net:backend/service_gateway.git
+
+编译：gateway-service，ucenter-service
+
+启动UCenter
+java -Xms1024M -Xmx1024M -jar /home/opt/java/ucenter/jar/user-service-1.0-SNAPSHOT.jar --spring.cloud.bootstrap.name=bootstrap --spring.cloud.bootstrap.location=/home/opt/java/ucenter/ucenter/config/
+
+启动gateway
+java -Xms1024M -Xmx1024M -jar /home/opt/java/ucenter/jar/gateway-service-0.0.1-SNAPSHOT.jar --cloud.bootstrap.config.name=bootstrap --cloud.bootstrap.config.location=/home/opt/java/ucenter/gateway/config/
+
+
+先启动ucenter，后启动gateway
+
+配置文件目录：gateway/config/bootstrap.properties
+	      gateway/config/logback.xml
+	      ucenter/config/bootstrap.properties
+	      ucenter/config/logback.xml
+
+
+
+
+
+
+
+
+tickTime=3000
+clientPort=2193
+initLimit=20
+syncLimit=10
+dataDir=/home/java/zk_test/zkdata_3/data
+dataLogDir=/home/java/zk_test/zkdata_3/logs
+server.1=127.0.0.1:2881:3881
+server.2=127.0.0.1:2882:3882
+server.3=127.0.0.1:2883:3883

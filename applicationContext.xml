@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+                    http://www.springframework.org/schema/context
+                    http://www.springframework.org/schema/context/spring-context-3.1.xsd
+                    http://www.springframework.org/schema/aop
+                    http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+                    http://www.springframework.org/schema/tx
+                    http://www.springframework.org/schema/tx/spring-tx-3.1.xsd ">
+
+	<context:annotation-config />
+
+	<context:component-scan base-package="com.dealmoon"></context:component-scan>
+
+	<!-- ucenter配置 -->
+	<bean id="ucenter_master" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+		<property name="driverClass" value="${jdbc.mysql.driverClassName}"></property>
+		<property name="jdbcUrl" value="${jdbc.ucenter.master.url}"></property>
+		<property name="user" value="${jdbc.ucenter.master.username}"></property>
+		<property name="password" value="${jdbc.ucenter.master.password}"></property>
+		<property name="minPoolSize" value="${jdbc.ucenter.master.minPoolSize}" />
+		<property name="maxPoolSize" value="${jdbc.ucenter.master.maxPoolSize}" />
+		<property name="maxIdleTime" value="${jdbc.ucenter.master.maxIdleTime}" />
+		<property name="acquireIncrement" value="${jdbc.ucenter.master.acquireIncrement}" />
+		<property name="maxStatements" value="${jdbc.ucenter.master.maxStatements}" />
+		<property name="initialPoolSize" value="${jdbc.ucenter.master.initialPoolSize}" />
+		<property name="idleConnectionTestPeriod" value="${jdbc.ucenter.master.idleConnectionTestPeriod}" />
+	</bean>
+
+	<bean id="ucenter_slave" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+		<property name="driverClass" value="${jdbc.mysql.driverClassName}"></property>
+		<property name="jdbcUrl" value="${jdbc.ucenter.slave.url}"></property>
+		<property name="user" value="${jdbc.ucenter.slave.username}"></property>
+		<property name="password" value="${jdbc.ucenter.slave.password}"></property>
+		<property name="minPoolSize" value="${jdbc.ucenter.slave.minPoolSize}" />
+		<property name="maxPoolSize" value="${jdbc.ucenter.slave.maxPoolSize}" />
+		<property name="maxIdleTime" value="${jdbc.ucenter.slave.maxIdleTime}" />
+		<property name="acquireIncrement" value="${jdbc.ucenter.slave.acquireIncrement}" />
+		<property name="maxStatements" value="${jdbc.ucenter.slave.maxStatements}" />
+		<property name="initialPoolSize" value="${jdbc.ucenter.slave.initialPoolSize}" />
+		<property name="idleConnectionTestPeriod" value="${jdbc.ucenter.slave.idleConnectionTestPeriod}" />
+	</bean>
+
+	<bean id="dataSource_ucenter" class="com.dealmoon.ucenter.dbutil.DynamicDataSource">
+		<property name="targetDataSources">
+			<map key-type="java.lang.String">
+				<entry key="master" value-ref="ucenter_master" />
+				<entry key="slave" value-ref="ucenter_slave" />
+			</map>
+		</property>
+		<property name="defaultTargetDataSource" ref="ucenter_master" />
+	</bean>
+
+	<bean id="transactionManager_ucenter"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource_ucenter" />
+	</bean>
+
+	<bean id="sqlSessionFactory_ucenter" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource_ucenter" />
+	</bean>
+
+	<tx:annotation-driven transaction-manager="transactionManager_ucenter" />
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.dealmoon.ucenter.ucenter.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory_ucenter" />
+	</bean>
+	
+	<bean id="dataSourceAspectModel" class="com.dealmoon.ucenter.dbutil.DataSourceAspectModel" />
+
+	<aop:config>
+		<aop:pointcut id="allModelMethods" expression="execution(* com.dealmoon.ucenter.*.dao.*.*(..))" />
+		<aop:advisor pointcut-ref="allModelMethods" advice-ref="dataSourceAspectModel" />
+	</aop:config>
+	
+	<bean id="resultAspectModel" class="com.dealmoon.ucenter.util.ResultAspectModel" />
+
+	<aop:config>
+		<aop:pointcut id="allControllerMethods" expression="execution(java.util.Map com.dealmoon.ucenter.controller.*.*.*(..))" />
+		<aop:advisor pointcut-ref="allControllerMethods" advice-ref="resultAspectModel" />
+	</aop:config>
+
+</beans>
+                
